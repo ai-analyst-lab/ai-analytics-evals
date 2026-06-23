@@ -1,0 +1,17 @@
+# A real correction tied to a reproducible NovaMart mistake (the L5 procedural-memory layer).
+# It records how to query correctly, not a result number: a fix is a query shape and a rule, not
+# an answer the agent should recall. Verified reproducible on the NovaMart practice data.
+corrections:
+  - mistake: trusting sessions.had_purchase to identify purchases in Q4 2024
+    wrong_move: counting or filtering purchases with sessions.had_purchase = true
+    why_wrong: >
+      For November and December 2024 (concentrated around Black Friday week) a block of sessions
+      carry a purchase_complete event and a completed order while had_purchase is false. Using
+      had_purchase undercounts purchases and depresses any Q4 conversion or purchase metric.
+    fix: >
+      Derive purchase outcomes from events.event_type = 'purchase_complete', or by joining orders
+      on session_id and filtering orders.status. Never use sessions.had_purchase for Q4 2024.
+    scope: NovaMart, sessions table, 2024-11 and 2024-12
+    verified: >
+      Reproducible on the NovaMart practice data: completed-order sessions with had_purchase=false
+      appear in Q4 2024 and disappear when purchases are derived from orders or events.

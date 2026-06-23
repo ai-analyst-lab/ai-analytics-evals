@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aievals"
+version = "0.1.0"
+description = "Standalone evals for agentic analytics: test any analyst on any warehouse."
+requires-python = ">=3.9"
+dependencies = ["pyyaml"]
+
+[tool.setuptools.packages.find]
+include = ["aievals*"]

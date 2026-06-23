@@ -1,0 +1,18 @@
+# Credentials never belong in this repo. The eval tool holds no creds; they live with the analyst.
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Generated run outputs (the audit trail is per-user, not committed). Keep the dir.
+aievals/runs/*
+!aievals/runs/.gitkeep

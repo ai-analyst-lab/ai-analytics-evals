@@ -1,0 +1,22 @@
+# A curated gold-SQL pattern tied to a NovaMart spine question (the L4 query-patterns layer). It
+# carries the validated query SHAPE, not an answer: the number is computed in SQL at eval time,
+# never written here. The pattern bakes in the joins, filters, and quirk guard a correct query
+# needs, so the agent reuses a known-good shape instead of re-deriving (and drifting) each run.
+patterns:
+  - question: what is checkout conversion
+    pattern: checkout_conversion_rate
+    means: the share of sessions that resulted in a completed order
+    sql: >
+      SELECT count(DISTINCT s.session_id) * 1.0 / (SELECT count(*) FROM sessions)
+      FROM sessions s
+      JOIN orders o ON o.session_id = s.session_id
+      WHERE o.status = 'completed'
+    joins: orders.session_id = sessions.session_id
+    filters: orders.status = 'completed' (exclude cancelled and returned)
+    quirk_guard: >
+      Do not use sessions.had_purchase (unreliable for Q4 2024); derive the purchase outcome from
+      orders or from events.event_type = 'purchase_complete'.
+    tables: [sessions, orders]
+    verified: >
+      Returns a sensible checkout-conversion figure on the NovaMart practice data, computed in SQL
+      at eval time (no answer is stored in this pattern).

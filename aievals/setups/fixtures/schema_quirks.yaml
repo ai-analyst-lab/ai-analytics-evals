@@ -1,0 +1,27 @@
+# The canonical schema-and-quirks overlay (canonical layer L4). It describes the data
+# infrastructure the agent has to link against: the tables, their grain, the keys, the joins
+# between them, and the quirks (the gotchas that silently corrupt a query when the agent does
+# not know them). It is structure and warnings, never an answer: there is no result number
+# anywhere in this file, by design, exactly like the retention contract next to it.
+tables:
+  - table: orders
+    grain: one row per order line
+    keys: [order_id, customer_id]
+    columns:
+      - status: the order lifecycle state; only 'completed' is a real sale
+      - created_at: order placement timestamp, stored in UTC
+  - table: customers
+    grain: one row per customer
+    keys: [customer_id]
+    columns:
+      - is_internal: flags internal and test accounts
+joins:
+  - from: orders.customer_id
+    to: customers.customer_id
+    kind: many-to-one
+quirks:
+  - cancelled and returned orders keep their row, so filter status='completed' or the counts double
+  - internal and test accounts share the is_internal flag, so exclude them from customer metrics
+  - created_at is UTC, so day-bucketing without a timezone shift skews the daily cohorts
+owner: data platform
+source_tier: validated-schema

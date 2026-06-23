@@ -1,0 +1,21 @@
+# The canonical meaning-only retention contract. The worked content reused by the format,
+# granularity, and home experiments (B-format, B-granularity, B-home). It defines the metric by
+# its MEANING, never by a number: the agent computes the figure from the data each run. There is
+# no result value anywhere in this file, by design.
+metrics:
+  - metric: retention_rate
+    means: >
+      The share of a month's new customers who make at least one more purchase within the next
+      90 days. It measures whether first-time buyers come back, not overall repeat volume.
+    grain: per customer, cohorted by first-purchase month
+    numerator: customers in the cohort with a second completed order within 90 days of their first
+    denominator: all customers whose first completed order falls in the cohort month
+    window: 90 days from each customer's first completed order
+    filters:
+      - completed orders only (exclude cancelled and returned)
+      - exclude internal and test accounts
+    rejected:
+      - lifetime repeat-purchase rate (no time bound; not what "retention" asks)
+      - active-in-both-halves-of-the-year (a coverage measure, not a cohort return rate)
+    owner: growth analytics
+    source_tier: validated-contract

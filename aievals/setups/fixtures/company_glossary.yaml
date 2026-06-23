@@ -1,0 +1,33 @@
+# The canonical company / org glossary overlay (canonical layer L1). The small, resident,
+# company-wide layer: org-level term definitions that rarely change. It defines terms by their
+# MEANING, never by a number, exactly like the L3 contract. There is no result value anywhere in
+# this file, by design.
+#
+# Note the deliberate disagreement with the L3 retention contract (retention_contract.yaml): the
+# company glossary reads "retention" loosely (lifetime repeat-purchase), which the area owner's L3
+# contract explicitly REJECTS in favor of a 90-day cohort return rate. That is the realistic
+# L1-vs-L3 conflict the precedence resolver settles in favor of L3.
+glossary:
+  - term: retention_rate
+    means: >
+      Read company-wide as the share of all customers who have ever made more than one purchase
+      (a lifetime repeat-purchase signal). A broad health number used in board decks, not bounded
+      to any time window.
+    grain: per customer, lifetime
+    scope: company-wide
+    layer: L1
+    source_tier: company-glossary
+    owner: revenue operations
+    last_verified: 2026-01-10
+    confidence: C
+  - term: active_customer
+    means: >
+      Any customer with at least one completed order in the trailing twelve months. The org-wide
+      denominator for headline customer counts.
+    grain: per customer
+    scope: company-wide
+    layer: L1
+    source_tier: company-glossary
+    owner: revenue operations
+    last_verified: 2026-01-10
+    confidence: C
