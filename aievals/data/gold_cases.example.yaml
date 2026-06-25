@@ -1,0 +1,56 @@
+# Gold cases: the storage convention.
+#
+# A gold case is a question plus the SQL that computes its answer. The answer itself is never
+# stored; it is recomputed from the SQL at eval time against live data, so it cannot rot. These
+# files live in the repo (git-versioned, PR-reviewed), one entry per case, per metric.
+#
+# Three ways the answer can come about, all the same shape here:
+#   - compute: the SQL reads real tables and calculates the number.
+#   - reuse:   the SQL points at an already-trusted source (a finance view), or the value is a
+#              recorded snapshot with its source in `note`.
+#   - create:  the SQL constructs the data inline (a VALUES cohort) so the answer is known by
+#              construction. Read-only safe; no table is written.
+#
+# Sign-off (proposed -> verified): a case is not trusted until a confirming query passes or a
+# human signs off. verified_by / verified_at / last_verified are recorded, never asserted by the
+# model. confidence is the DRI grade: A reviewed + query-tested, B reviewed, C auto, F known-wrong.
+
+cases:
+  - question: "What is total completed revenue?"
+    sql: "select sum(total_amount) from orders where status='completed'"
+    tables: [orders]
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-25
+    last_verified: 2026-06-25
+    note: >
+      Computed gold against NovaMart on Snowflake (BOOTCAMP_DB.NOVAMART): 3,150,899.34.
+      The fan-out bug (join order_items, sum order total per line) returns 5,907,972.60,
+      a 1.88x inflation, which this case catches as a fail.
+
+  - question: "Retention on a constructed cohort where 3 of 6 are retained"
+    sql: "select avg(retained*1.0) from (values (1),(0),(1),(0),(1),(0)) as t(retained)"
+    tables: []
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-25
+    last_verified: 2026-06-25
+    note: >
+      Created gold: the answer is known by construction (= 0.5). Tests the retention logic on a
+      case you own, with no real data and no table write (read-only safe on Snowflake).
+
+  - question: "What is total completed revenue? (anchored)"
+    value: 3150899.34
+    snapshot_tag: "novamart-2026-06-25"
+    tables: [orders]
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-25
+    last_verified: 2026-06-25
+    note: >
+      Anchored gold: a verified known number, pinned to a snapshot, independent of any query. The
+      stronger anchor. A fan-out analysis (5,907,972.60) PLUS a same-bug SQL gold would falsely
+      pass; this anchored number fails it. Re-verify when the snapshot moves.
