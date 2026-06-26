@@ -1,0 +1,20 @@
+# Held-out gold suite for NovaMart. HIDDEN from the analyst: it lives with the harness, NOT in the
+# communal context repo. If the agent could read these answers it would cheat. Each case = a question +
+# the SQL that computes the gold; the value is recomputed at eval time (never stored). The analyst's answer
+# is graded against the recomputed gold. SQL verified on BOOTCAMP_DB.NOVAMART (Snowflake) 2026-06-25.
+cases:
+  - question: "What is total completed revenue?"
+    sql: "select sum(total_amount) from orders where status='completed'"
+    tables: [orders]
+  - question: "How many completed orders are there?"
+    sql: "select count(*) from orders where status='completed'"
+    tables: [orders]
+  - question: "What is our retention rate?"
+    sql: "select count_if(is_current)*1.0/count(*) from memberships"
+    tables: [memberships]
+  - question: "How many distinct customers placed a completed order?"
+    sql: "select count(distinct user_id) from orders where status='completed'"
+    tables: [orders]
+  - question: "What is the average completed order value?"
+    sql: "select avg(total_amount) from orders where status='completed'"
+    tables: [orders]

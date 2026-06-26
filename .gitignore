@@ -16,3 +16,5 @@ venv/
 # Generated run outputs (the audit trail is per-user, not committed). Keep the dir.
 aievals/runs/*
 !aievals/runs/.gitkeep
+
+monitor_demo.html
