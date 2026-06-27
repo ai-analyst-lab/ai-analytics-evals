@@ -25,6 +25,12 @@ class GoldCase:
                                  # because it does not share the analyst's SQL logic. Must carry a
                                  # snapshot_tag + verified_by so it is a pinned point-in-time fact.
     tables: tuple = ()           # the tables the SQL reads, for the schema checksum binding
+    approved_query: str = ""     # the blessed query for the query-similarity check (usually == sql).
+                                 # The analyst's SQL is compared to THIS, not to the gold sql, so the
+                                 # similarity signal can use a different blessed phrasing if needed.
+    difficulty: str = None       # easy | medium | hard (suite coverage, not used in scoring)
+    type: str = None             # case shape: single-table aggregate, join/fan-out-prone, definitional,
+                                 # time-windowed, ratio, distinct-count, multi-step (coverage label)
     snapshot_tag: str = None     # which data snapshot this gold was derived against
     schema_checksum: str = None  # checksum of the tables the SQL reads, bound at derivation
     note: str = ""

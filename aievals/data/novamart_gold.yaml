@@ -1,20 +1,324 @@
-# Held-out gold suite for NovaMart. HIDDEN from the analyst: it lives with the harness, NOT in the
-# communal context repo. If the agent could read these answers it would cheat. Each case = a question +
-# the SQL that computes the gold; the value is recomputed at eval time (never stored). The analyst's answer
-# is graded against the recomputed gold. SQL verified on BOOTCAMP_DB.NOVAMART (Snowflake) 2026-06-25.
+# Held-out gold suite for NovaMart. HIDDEN FROM THE ANALYST: this file lives with the harness,
+# NOT in the communal context repo. If the agent could read these answers it would cheat.
+#
+# Each case = a question + the SQL that computes the gold + the approved (blessed) query used for
+# the query-similarity check. The VALUE is never stored; it is recomputed from the SQL at eval
+# time against live data, so it cannot rot. The analyst is graded on (1) accuracy: its number vs
+# the recomputed gold, and (2) query-similarity: its SQL vs approved_query.
+#
+# Every sql below was RUN LIVE on BOOTCAMP_DB.NOVAMART (Snowflake, BOOTCAMP_STUDENT read-only)
+# on 2026-06-26 and confirmed to return a real number. Definitions used:
+#   retention            = count_if(is_current)/count(*) from memberships
+#   checkout conversion  = events-based: distinct purchase_complete sessions / distinct
+#                          checkout_started sessions (NOT sessions.had_purchase)
+# 28 cases spread across difficulty (easy/medium/hard) and type (single-table aggregate,
+# join/fan-out-prone, definitional, time-windowed, ratio, distinct-count, multi-step).
 cases:
   - question: "What is total completed revenue?"
     sql: "select sum(total_amount) from orders where status='completed'"
+    approved_query: "select sum(total_amount) from orders where status='completed'"
     tables: [orders]
+    difficulty: easy
+    type: "single-table aggregate"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
   - question: "How many completed orders are there?"
     sql: "select count(*) from orders where status='completed'"
+    approved_query: "select count(*) from orders where status='completed'"
     tables: [orders]
-  - question: "What is our retention rate?"
-    sql: "select count_if(is_current)*1.0/count(*) from memberships"
-    tables: [memberships]
-  - question: "How many distinct customers placed a completed order?"
-    sql: "select count(distinct user_id) from orders where status='completed'"
-    tables: [orders]
+    difficulty: easy
+    type: "single-table aggregate"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
   - question: "What is the average completed order value?"
     sql: "select avg(total_amount) from orders where status='completed'"
+    approved_query: "select avg(total_amount) from orders where status='completed'"
     tables: [orders]
+    difficulty: easy
+    type: "single-table aggregate"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "How many distinct customers placed a completed order?"
+    sql: "select count(distinct user_id) from orders where status='completed'"
+    approved_query: "select count(distinct user_id) from orders where status='completed'"
+    tables: [orders]
+    difficulty: easy
+    type: "distinct-count"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the total discount given on completed orders?"
+    sql: "select sum(discount_amount) from orders where status='completed'"
+    approved_query: "select sum(discount_amount) from orders where status='completed'"
+    tables: [orders]
+    difficulty: easy
+    type: "single-table aggregate"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the average raw NPS survey score?"
+    sql: "select avg(score) from nps_responses"
+    approved_query: "select avg(score) from nps_responses"
+    tables: [nps_responses]
+    difficulty: easy
+    type: "single-table aggregate"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "How many users were acquired via tiktok_ads?"
+    sql: "select count(*) from users where acquisition_channel='tiktok_ads'"
+    approved_query: "select count(*) from users where acquisition_channel='tiktok_ads'"
+    tables: [users]
+    difficulty: easy
+    type: "single-table aggregate"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is our membership retention rate?"
+    sql: "select count_if(is_current)*1.0/count(*) from memberships"
+    approved_query: "select count_if(is_current)*1.0/count(*) from memberships"
+    tables: [memberships]
+    difficulty: medium
+    type: "definitional"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the order cancellation rate?"
+    sql: "select count_if(status='cancelled')*1.0/count(*) from orders"
+    approved_query: "select count_if(status='cancelled')*1.0/count(*) from orders"
+    tables: [orders]
+    difficulty: medium
+    type: "ratio"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the order return rate?"
+    sql: "select count_if(status='returned')*1.0/count(*) from orders"
+    approved_query: "select count_if(status='returned')*1.0/count(*) from orders"
+    tables: [orders]
+    difficulty: medium
+    type: "ratio"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What share of sessions resulted in a purchase?"
+    sql: "select count_if(had_purchase)*1.0/count(*) from sessions"
+    approved_query: "select count_if(had_purchase)*1.0/count(*) from sessions"
+    tables: [sessions]
+    difficulty: medium
+    type: "ratio"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the membership trial-to-paid conversion rate?"
+    sql: "select count_if(status='converted')*1.0/count(*) from memberships"
+    approved_query: "select count_if(status='converted')*1.0/count(*) from memberships"
+    tables: [memberships]
+    difficulty: medium
+    type: "definitional"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What was completed revenue in Q4 2024?"
+    sql: "select sum(total_amount) from orders where status='completed' and order_date >= '2024-10-01' and order_date < '2025-01-01'"
+    approved_query: "select sum(total_amount) from orders where status='completed' and order_date >= '2024-10-01' and order_date < '2025-01-01'"
+    tables: [orders]
+    difficulty: medium
+    type: "time-windowed"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What was completed revenue in December 2024?"
+    sql: "select sum(total_amount) from orders where status='completed' and order_date >= '2024-12-01' and order_date < '2025-01-01'"
+    approved_query: "select sum(total_amount) from orders where status='completed' and order_date >= '2024-12-01' and order_date < '2025-01-01'"
+    tables: [orders]
+    difficulty: medium
+    type: "time-windowed"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "How many units were sold across completed orders?"
+    sql: "select sum(oi.quantity) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    approved_query: "select sum(oi.quantity) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    tables: [order_items, orders]
+    difficulty: medium
+    type: "join/fan-out-prone"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is total line-item revenue (sum of line_total) for completed orders?"
+    sql: "select sum(oi.line_total) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    approved_query: "select sum(oi.line_total) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    tables: [order_items, orders]
+    difficulty: medium
+    type: "join/fan-out-prone"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "How many distinct products were sold in completed orders?"
+    sql: "select count(distinct oi.product_id) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    approved_query: "select count(distinct oi.product_id) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    tables: [order_items, orders]
+    difficulty: medium
+    type: "distinct-count"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the average number of line items per completed order?"
+    sql: "select count(*)*1.0/count(distinct oi.order_id) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    approved_query: "select count(*)*1.0/count(distinct oi.order_id) from order_items oi join orders o on oi.order_id=o.order_id where o.status='completed'"
+    tables: [order_items, orders]
+    difficulty: medium
+    type: "multi-step"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is average completed revenue per customer?"
+    sql: "select sum(total_amount)/count(distinct user_id) from orders where status='completed'"
+    approved_query: "select sum(total_amount)/count(distinct user_id) from orders where status='completed'"
+    tables: [orders]
+    difficulty: medium
+    type: "ratio"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the support ticket resolution rate?"
+    sql: "select count_if(status in ('resolved','closed'))*1.0/count(*) from support_tickets"
+    approved_query: "select count_if(status in ('resolved','closed'))*1.0/count(*) from support_tickets"
+    tables: [support_tickets]
+    difficulty: medium
+    type: "ratio"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the average resolution time in hours for resolved support tickets?"
+    sql: "select avg(datediff('hour', created_at, resolved_at)) from support_tickets where status='resolved' and resolved_at is not null"
+    approved_query: "select avg(datediff('hour', created_at, resolved_at)) from support_tickets where status='resolved' and resolved_at is not null"
+    tables: [support_tickets]
+    difficulty: medium
+    type: "single-table aggregate"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What was completed revenue on holidays?"
+    sql: "select sum(o.total_amount) from orders o join calendar c on o.order_date=c.date where o.status='completed' and c.is_holiday"
+    approved_query: "select sum(o.total_amount) from orders o join calendar c on o.order_date=c.date where o.status='completed' and c.is_holiday"
+    tables: [orders, calendar]
+    difficulty: medium
+    type: "join/fan-out-prone"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What share of completed revenue came from Plus member orders?"
+    sql: "select sum(case when is_plus_member_order then total_amount else 0 end)/sum(total_amount) from orders where status='completed'"
+    approved_query: "select sum(case when is_plus_member_order then total_amount else 0 end)/sum(total_amount) from orders where status='completed'"
+    tables: [orders]
+    difficulty: medium
+    type: "ratio"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the checkout conversion rate?"
+    sql: "select count(distinct case when event_type='purchase_complete' then session_id end)*1.0/nullif(count(distinct case when event_type='checkout_started' then session_id end),0) from events"
+    approved_query: "select count(distinct case when event_type='purchase_complete' then session_id end)*1.0/nullif(count(distinct case when event_type='checkout_started' then session_id end),0) from events"
+    tables: [events]
+    difficulty: hard
+    type: "definitional"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the NPS (net promoter score)?"
+    sql: "select (count_if(score>=9)-count_if(score<=6))*100.0/count(*) from nps_responses"
+    approved_query: "select (count_if(score>=9)-count_if(score<=6))*100.0/count(*) from nps_responses"
+    tables: [nps_responses]
+    difficulty: hard
+    type: "definitional"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What share of sessions had an add-to-cart event?"
+    sql: "select count(distinct case when event_type='add_to_cart' then session_id end)*1.0/count(distinct session_id) from events"
+    approved_query: "select count(distinct case when event_type='add_to_cart' then session_id end)*1.0/count(distinct session_id) from events"
+    tables: [events]
+    difficulty: hard
+    type: "definitional"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "How many monthly active users were there in December 2024?"
+    sql: "select count(distinct user_id) from events where event_date >= '2024-12-01' and event_date < '2025-01-01'"
+    approved_query: "select count(distinct user_id) from events where event_date >= '2024-12-01' and event_date < '2025-01-01'"
+    tables: [events]
+    difficulty: hard
+    type: "time-windowed"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26
+  - question: "What is the total product cost (COGS) for completed orders?"
+    sql: "select sum(oi.quantity*p.cost) from order_items oi join orders o on oi.order_id=o.order_id join products p on oi.product_id=p.product_id where o.status='completed'"
+    approved_query: "select sum(oi.quantity*p.cost) from order_items oi join orders o on oi.order_id=o.order_id join products p on oi.product_id=p.product_id where o.status='completed'"
+    tables: [order_items, orders, products]
+    difficulty: hard
+    type: "multi-step"
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-26
+    last_verified: 2026-06-26

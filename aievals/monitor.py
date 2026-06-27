@@ -10,6 +10,8 @@ from __future__ import annotations
 import html
 from pathlib import Path
 
+from aievals.html_style import page
+
 
 def render_dashboard(runs, out_path, title="Eval monitor"):
     """runs: list of run records, oldest first, each a dict:
@@ -53,21 +55,10 @@ def render_dashboard(runs, out_path, title="Eval monitor"):
     table = ("<table><thead><tr><th>run</th><th>when</th><th>sha</th><th>accuracy</th>"
              "<th>vs prev</th><th>changelog</th></tr></thead><tbody>" + "".join(rows) + "</tbody></table>")
 
-    doc = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<title>{html.escape(title)}</title>
-<style>
- body{{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:32px;color:#1a1a1a;background:#fafafa}}
- h1{{font-size:20px;margin-bottom:2px}} .sub{{color:#888;font-size:13px;margin-bottom:18px}}
- .card{{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:20px;margin:16px 0}}
- h3{{font-size:14px;color:#444;margin:0 0 12px}}
- table{{border-collapse:collapse;width:100%;font-size:14px}}
- th,td{{text-align:left;padding:8px 10px;border-bottom:1px solid #eee}}
- th{{color:#666;font-weight:600}} code{{background:#f3f3f3;padding:1px 5px;border-radius:3px;font-size:12px}}
-</style></head><body>
-<h1>{html.escape(title)}</h1>
-<div class="sub">Accuracy on the held-out eval suite over time. Gold answers are hidden from the analyst.</div>
-<div class="card"><h3>Accuracy over time</h3>{chart}</div>
-<div class="card"><h3>Runs</h3>{table}</div>
-</body></html>"""
+    body = (f'<div class="card"><h3>Accuracy over time</h3>{chart}</div>\n'
+            f'<div class="card"><h3>Runs</h3>{table}</div>')
+    doc = page(title,
+               "Accuracy on the held-out eval suite over time. Gold answers are hidden from the analyst.",
+               body)
     Path(out_path).write_text(doc)
     return out_path
