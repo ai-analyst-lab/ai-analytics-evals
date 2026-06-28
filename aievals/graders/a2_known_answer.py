@@ -21,7 +21,7 @@ import re
 
 from aievals.graders.base import Grader, register
 from aievals.stats.reliability import parse_number
-from aievals.data.gold import compute_gold, schema_checksum
+from aievals.data.gold import resolve_gold, schema_checksum
 
 # Default relative tolerance for a numeric match (a fraction of the gold value).
 DEFAULT_REL_TOL = 0.005
@@ -79,13 +79,17 @@ class KnownAnswerGrader(Grader):
         if gold is None:
             return self.result(kind="score", status="not-applicable", value=None,
                                detail="no gold case for this question")
-        if conn is None:
+        # An anchored case (gold.value set) IS the gold and needs no recompute: no connection
+        # required, no schema-checksum check. Only a computed case (recompute case.sql) needs them.
+        anchored = gold.value is not None
+        if not anchored and conn is None:
             return self.result(kind="score", status="blocked", value=None,
                                blocked_on="no connection supplied to recompute the gold in SQL",
                                detail="A2 recomputes the gold at eval time; it needs a connection")
 
-        # Snapshot/checksum binding (W1.2): a schema change invalidates the gold, not the analyst.
-        if gold.schema_checksum and gold.tables:
+        # Snapshot/checksum binding (W1.2): a schema change invalidates a COMPUTED gold, not the
+        # analyst. An anchored value is pinned by snapshot_tag/verified_by instead.
+        if not anchored and gold.schema_checksum and gold.tables:
             live = schema_checksum(conn, gold.tables)
             if live != gold.schema_checksum:
                 return self.result(
@@ -93,13 +97,15 @@ class KnownAnswerGrader(Grader):
                     detail=(f"stale gold: schema checksum {live} != bound {gold.schema_checksum}. "
                             "Re-derive the gold; this is not a wrong analyst."))
 
-        gold_value = compute_gold(conn, gold.sql)
+        # resolve_gold returns the anchored value as-is, or recomputes case.sql when there is none.
+        gold_value = resolve_gold(conn, gold)
         analyst_value = parse_number(output.get("headline") or output.get("number")) \
             if isinstance(output, dict) else parse_number(output)
 
         match = values_match(analyst_value, gold_value, rel_tol)
         detail = (f"analyst {analyst_value} vs gold {gold_value} "
-                  f"(computed in SQL, snapshot {gold.snapshot_tag}, rel_tol {rel_tol})")
+                  f"({'anchored value' if anchored else 'computed in SQL'}, "
+                  f"snapshot {gold.snapshot_tag}, rel_tol {rel_tol})")
 
         # A2c: if an ancestor query is supplied, fold its diff into the detail. A changed query
         # cannot be auto-passed on text alone; the equivalence judge is blocked, stated honestly.
