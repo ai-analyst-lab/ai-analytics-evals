@@ -67,23 +67,23 @@ cases:
     split: train
     note: "Drifts: window length + what counts as activation; house = first completed order within 30d of signup."
 
-  - question: "How much higher is the average order value for Plus member orders than non-Plus orders (as a ratio)?"
+  - question: "What is the ratio of average order value for Plus member orders to non-Plus member orders, on completed orders?"
     sql: "select avg(iff(is_plus_member_order,total_amount,null)) / nullif(avg(iff(not is_plus_member_order,total_amount,null)),0) from orders where status='completed'"
     approved_query: "select avg(iff(is_plus_member_order,total_amount,null)) / nullif(avg(iff(not is_plus_member_order,total_amount,null)),0) from orders where status='completed'"
     tables: [orders]
     difficulty: hard
     type: "ratio"
     split: train
-    note: "Drifts: ratio direction and whether to filter completed; house = plus AOV / non-plus AOV on completed."
+    note: "Drifts: ratio direction + completed filter; house = Plus AOV / non-Plus AOV on completed (the data shows Plus is slightly LOWER, ~0.96 — neutral wording so it doesn't presuppose 'higher')."
 
   - question: "What share of users are power users?"
-    sql: "select count_if(n>=10)*1.0/(select count(*) from users) from (select user_id, count(*) n from sessions group by user_id) t"
-    approved_query: "select count_if(n>=10)*1.0/(select count(*) from users) from (select user_id, count(*) n from sessions group by user_id) t"
+    sql: "select count_if(n>=50)*1.0/(select count(*) from users) from (select user_id, count(*) n from sessions group by user_id) t"
+    approved_query: "select count_if(n>=50)*1.0/(select count(*) from users) from (select user_id, count(*) n from sessions group by user_id) t"
     tables: [sessions, users]
     difficulty: medium
     type: "definitional"
     split: train
-    note: "Drifts: 'power user' threshold is undefined; house = users with >=10 sessions over all registered users."
+    note: "Drifts: 'power user' threshold is undefined; house = users with >=50 sessions (top ~11%; median is 26). A naive >=10 captures 84%."
 
   - question: "What share of completed revenue came on weekends?"
     sql: "select sum(iff(c.is_weekend,o.total_amount,0))*1.0/nullif(sum(o.total_amount),0) from orders o join calendar c on o.order_date=c.date where o.status='completed'"

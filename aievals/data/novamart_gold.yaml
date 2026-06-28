@@ -350,3 +350,255 @@ cases:
     verified_by: shane
     verified_at: 2026-06-26
     last_verified: 2026-06-26
+  - question: "What is our membership churn rate?"
+    sql: "select count_if(not is_current)*1.0/count(*) from memberships"
+    approved_query: "select count_if(not is_current)*1.0/count(*) from memberships"
+    tables: [memberships]
+    difficulty: medium
+    type: "definitional"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: naive guesses status='cancelled'/all or ended_at IS NOT NULL; house = not is_current."
+
+  - question: "What is the cart abandonment rate?"
+    sql: "with s as (select session_id, max(iff(event_type='add_to_cart',1,0)) atc, max(iff(event_type='purchase_complete',1,0)) pc from events group by session_id) select count_if(atc=1 and pc=0)*1.0/nullif(count_if(atc=1),0) from s"
+    approved_query: "with s as (select session_id, max(iff(event_type='add_to_cart',1,0)) atc, max(iff(event_type='purchase_complete',1,0)) pc from events group by session_id) select count_if(atc=1 and pc=0)*1.0/nullif(count_if(atc=1),0) from s"
+    tables: [events]
+    difficulty: hard
+    type: "ratio"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Quirk trap: naive uses sessions.had_purchase (unreliable Q4 2024); house derives from events."
+
+  - question: "What is our net revenue?"
+    sql: "select sum(iff(status='completed',total_amount,0)) - sum(iff(status='returned',total_amount,0)) from orders"
+    approved_query: "select sum(iff(status='completed',total_amount,0)) - sum(iff(status='returned',total_amount,0)) from orders"
+    tables: [orders]
+    difficulty: medium
+    type: "definitional"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: naive = completed only (gross) or all statuses; house = completed minus returned."
+
+  - question: "What is our gross margin percentage on completed orders?"
+    sql: "select (sum(oi.line_total) - sum(oi.quantity*p.cost))*1.0/nullif(sum(oi.line_total),0) from order_items oi join orders o on oi.order_id=o.order_id join products p on oi.product_id=p.product_id where o.status='completed'"
+    approved_query: "select (sum(oi.line_total) - sum(oi.quantity*p.cost))*1.0/nullif(sum(oi.line_total),0) from order_items oi join orders o on oi.order_id=o.order_id join products p on oi.product_id=p.product_id where o.status='completed'"
+    tables: [order_items, orders, products]
+    difficulty: hard
+    type: "multi-step"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: cost vs price confusion; fan-out if joined wrong; house = item-level (revenue-COGS)/revenue."
+
+  - question: "What is our repeat purchase rate?"
+    sql: "select count_if(n>=2)*1.0/nullif(count(*),0) from (select user_id, count(*) n from orders where status='completed' group by user_id) t"
+    approved_query: "select count_if(n>=2)*1.0/nullif(count(*),0) from (select user_id, count(*) n from orders where status='completed' group by user_id) t"
+    tables: [orders]
+    difficulty: medium
+    type: "multi-step"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: naive counts orders not distinct customers; house = customers with >=2 / customers with >=1."
+
+  - question: "What is our 30-day activation rate for new users?"
+    sql: "select count(distinct u.user_id)*1.0/(select count(*) from users) from users u join orders o on o.user_id=u.user_id where o.status='completed' and o.order_date <= dateadd('day',30,u.signup_date)"
+    approved_query: "select count(distinct u.user_id)*1.0/(select count(*) from users) from users u join orders o on o.user_id=u.user_id where o.status='completed' and o.order_date <= dateadd('day',30,u.signup_date)"
+    tables: [users, orders]
+    difficulty: hard
+    type: "time-windowed"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: window length + what counts as activation; house = first completed order within 30d of signup."
+
+  - question: "What is the ratio of average order value for Plus member orders to non-Plus member orders, on completed orders?"
+    sql: "select avg(iff(is_plus_member_order,total_amount,null)) / nullif(avg(iff(not is_plus_member_order,total_amount,null)),0) from orders where status='completed'"
+    approved_query: "select avg(iff(is_plus_member_order,total_amount,null)) / nullif(avg(iff(not is_plus_member_order,total_amount,null)),0) from orders where status='completed'"
+    tables: [orders]
+    difficulty: hard
+    type: "ratio"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: ratio direction + completed filter; house = Plus AOV / non-Plus AOV on completed (the data shows Plus is slightly LOWER, ~0.96 — neutral wording so it doesn't presuppose 'higher')."
+
+  - question: "What share of users are power users?"
+    sql: "select count_if(n>=50)*1.0/(select count(*) from users) from (select user_id, count(*) n from sessions group by user_id) t"
+    approved_query: "select count_if(n>=50)*1.0/(select count(*) from users) from (select user_id, count(*) n from sessions group by user_id) t"
+    tables: [sessions, users]
+    difficulty: medium
+    type: "definitional"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: 'power user' threshold is undefined; house = users with >=50 sessions (top ~11%; median is 26). A naive >=10 captures 84%."
+
+  - question: "What share of completed revenue came on weekends?"
+    sql: "select sum(iff(c.is_weekend,o.total_amount,0))*1.0/nullif(sum(o.total_amount),0) from orders o join calendar c on o.order_date=c.date where o.status='completed'"
+    approved_query: "select sum(iff(c.is_weekend,o.total_amount,0))*1.0/nullif(sum(o.total_amount),0) from orders o join calendar c on o.order_date=c.date where o.status='completed'"
+    tables: [orders, calendar]
+    difficulty: medium
+    type: "join/fan-out-prone"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Mostly a floor case; tests the calendar join + completed filter."
+
+  # ---- TEST (held-out generalization) ----
+  - question: "What share of sessions converted to a completed order?"
+    sql: "select count(distinct o.session_id)*1.0/(select count(*) from sessions) from orders o where o.status='completed' and o.session_id is not null"
+    approved_query: "select count(distinct o.session_id)*1.0/(select count(*) from sessions) from orders o where o.status='completed' and o.session_id is not null"
+    tables: [orders, sessions]
+    difficulty: hard
+    type: "ratio"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Quirk trap: naive uses had_purchase (unreliable Q4); house joins orders on session_id, completed only."
+
+  - question: "What is our average discount rate on completed orders?"
+    sql: "select sum(discount_amount)*1.0/nullif(sum(subtotal),0) from orders where status='completed'"
+    approved_query: "select sum(discount_amount)*1.0/nullif(sum(subtotal),0) from orders where status='completed'"
+    tables: [orders]
+    difficulty: medium
+    type: "ratio"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: denominator subtotal (gross) vs total_amount (net of discount); house = discount/subtotal."
+
+  - question: "What is our ARPU (average revenue per user)?"
+    sql: "select (select sum(total_amount) from orders where status='completed')*1.0/(select count(*) from users)"
+    approved_query: "select (select sum(total_amount) from orders where status='completed')*1.0/(select count(*) from users)"
+    tables: [orders, users]
+    difficulty: medium
+    type: "definitional"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: per registered user vs per paying customer vs per active; house = completed revenue / all registered users."
+
+  - question: "What is our refund rate by revenue?"
+    sql: "select sum(iff(status='returned',total_amount,0))*1.0/nullif(sum(iff(status in ('completed','returned'),total_amount,0)),0) from orders"
+    approved_query: "select sum(iff(status='returned',total_amount,0))*1.0/nullif(sum(iff(status in ('completed','returned'),total_amount,0)),0) from orders"
+    tables: [orders]
+    difficulty: medium
+    type: "ratio"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: by-count vs by-revenue, and the denominator; house = returned rev / (completed+returned) rev."
+
+  - question: "What was our DAU/MAU stickiness in December 2024?"
+    sql: "select (select avg(d) from (select event_date, count(distinct user_id) d from events where event_date>='2024-12-01' and event_date<'2025-01-01' group by event_date)) / nullif((select count(distinct user_id) from events where event_date>='2024-12-01' and event_date<'2025-01-01'),0)"
+    approved_query: "select (select avg(d) from (select event_date, count(distinct user_id) d from events where event_date>='2024-12-01' and event_date<'2025-01-01' group by event_date)) / nullif((select count(distinct user_id) from events where event_date>='2024-12-01' and event_date<'2025-01-01'),0)"
+    tables: [events]
+    difficulty: hard
+    type: "multi-step"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: 'active' definition + avg-DAU computation; house = avg daily DAU / MAU over December."
+
+  - question: "What share of completed revenue comes from first-time buyers?"
+    sql: "with f as (select user_id, min(order_date) fd from orders where status='completed' group by user_id) select sum(iff(o.order_date=f.fd,o.total_amount,0))*1.0/nullif(sum(o.total_amount),0) from orders o join f on o.user_id=f.user_id where o.status='completed'"
+    approved_query: "with f as (select user_id, min(order_date) fd from orders where status='completed' group by user_id) select sum(iff(o.order_date=f.fd,o.total_amount,0))*1.0/nullif(sum(o.total_amount),0) from orders o join f on o.user_id=f.user_id where o.status='completed'"
+    tables: [orders]
+    difficulty: hard
+    type: "multi-step"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Drifts: 'first-time' definition; house = revenue from each customer's first completed order / total."
+
+  - question: "What is the average number of sessions per user?"
+    sql: "select count(*)*1.0/nullif(count(distinct user_id),0) from sessions"
+    approved_query: "select count(*)*1.0/nullif(count(distinct user_id),0) from sessions"
+    tables: [sessions]
+    difficulty: easy
+    type: "ratio"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Mild drift: per active user (has sessions) vs per registered user; house = per user with sessions."
+
+  - question: "How many completed orders were placed by Plus members?"
+    sql: "select count(*) from orders where status='completed' and is_plus_member_order"
+    approved_query: "select count(*) from orders where status='completed' and is_plus_member_order"
+    tables: [orders]
+    difficulty: easy
+    type: "single-table aggregate"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Floor case; tests the completed filter + boolean."
+
+  - question: "How many active memberships do we have?"
+    sql: "select count_if(is_current) from memberships"
+    approved_query: "select count_if(is_current) from memberships"
+    tables: [memberships]
+    difficulty: easy
+    type: "single-table aggregate"
+    split: test
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-06-27
+    last_verified: 2026-06-27
+    note: "Floor-ish; naive ended_at IS NULL may agree with is_current — confirms the active definition."
