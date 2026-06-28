@@ -13,11 +13,28 @@ from pathlib import Path
 from aievals.html_style import page
 
 
+def _run_view(r):
+    """Flatten a run record into the fields the dashboard needs, reading accuracy/passed/total from
+    `aggregate` (the run_eval shape) or the top level (a hand-built dict), and tolerating a missing
+    git_sha/changelog so a run logged before those existed still renders (BL-C1)."""
+    a = r.get("aggregate") or {}
+    acc = a.get("accuracy", r.get("accuracy"))
+    return {
+        "run_id": r.get("run_id", "?"),
+        "timestamp": r.get("timestamp", ""),
+        "git_sha": r.get("git_sha", ""),
+        "changelog": r.get("changelog", ""),
+        "split": r.get("split", a.get("split", "")),
+        "accuracy": acc if acc is not None else 0.0,
+        "passed": a.get("passed", r.get("passed", "?")),
+        "total": a.get("total", r.get("total", "?")),
+    }
+
+
 def render_dashboard(runs, out_path, title="Eval monitor"):
-    """runs: list of run records, oldest first, each a dict:
-        {run_id, timestamp, git_sha, accuracy (0..1), passed, total, changelog}
+    """runs: list of run records (the run_eval shape, with an `aggregate` block), oldest first.
     Writes a self-contained HTML dashboard to out_path and returns the path."""
-    runs = list(runs)
+    runs = [_run_view(r) for r in runs]
     W, H, pad = 660, 240, 40
     n = max(1, len(runs) - 1)
     xs = [pad + (W - 2 * pad) * i / n for i in range(len(runs))]
@@ -47,12 +64,13 @@ def render_dashboard(runs, out_path, title="Eval monitor"):
         rows.append(
             f"<tr><td>{html.escape(str(r['run_id']))}</td>"
             f"<td>{html.escape(str(r.get('timestamp', '')))}</td>"
-            f"<td><code>{html.escape(str(r.get('git_sha', '')))}</code></td>"
-            f"<td><b>{int(acc*100)}%</b> ({r.get('passed', '?')}/{r.get('total', '?')})</td>"
+            f"<td><code>{html.escape(str(r['git_sha']))}</code></td>"
+            f"<td>{html.escape(str(r['split']))}</td>"
+            f"<td><b>{int(acc*100)}%</b> ({r['passed']}/{r['total']})</td>"
             f"<td style='color:{color};font-weight:600'>{delta} {flag}</td>"
             f"<td>{html.escape(str(r.get('changelog', '')))}</td></tr>")
         prev = acc
-    table = ("<table><thead><tr><th>run</th><th>when</th><th>sha</th><th>accuracy</th>"
+    table = ("<table><thead><tr><th>run</th><th>when</th><th>sha</th><th>split</th><th>accuracy</th>"
              "<th>vs prev</th><th>changelog</th></tr></thead><tbody>" + "".join(rows) + "</tbody></table>")
 
     body = (f'<div class="card"><h3>Accuracy over time</h3>{chart}</div>\n'
