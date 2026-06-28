@@ -217,12 +217,34 @@ def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="He
                 gc[k] = r[k]
         per_case.append(gc)
 
+    # Error analysis: cluster the failures into ranked modes so the readout names the dominant bug
+    # (the V6 hinge). Diagnosis — what each mode means and what to fix — stays the student's job.
+    gold_by_q = {c.question.strip().lower(): c for c in cases}
+    failed = []
+    for p in per_case:
+        if not p["passed"]:
+            gc = gold_by_q.get(str(p["question"]).strip().lower())
+            failed.append({
+                "question": p["question"], "gold_value": p["gold_value"],
+                "analyst_value": p["analyst_value"], "query": p.get("analyst_query", ""),
+                "approved_query": (gc.approved_query or gc.sql) if gc else "",
+                "definition": ((gc.note or "") if gc else ""),
+            })
+    clusters = {}
+    if failed:
+        try:
+            from aievals.cluster_errors import cluster_failures
+            clusters = cluster_failures(failed)
+        except Exception:
+            clusters = {}
+
     run_id = run_id or datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%SZ")
     results = {
         "run_id": run_id,
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "split": split,
         "aggregate": aggregate(per_case),
+        "failure_modes": [{"mode": m, "count": len(cs)} for m, cs in clusters.items()],
         "cases": per_case,
         "unmatched": unmatched,
     }
@@ -239,4 +261,11 @@ def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="He
 
     results["json_path"] = str(json_path)
     results["html_path"] = str(html_path)
+    if clusters:
+        try:
+            from aievals.cluster_errors import render_clusters_html
+            results["clusters_path"] = str(
+                render_clusters_html(clusters, out / f"{run_id}-clusters.html"))
+        except Exception:
+            pass
     return results

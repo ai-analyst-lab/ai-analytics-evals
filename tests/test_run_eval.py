@@ -237,6 +237,17 @@ def test_cost_and_meta_in_run_record():
         check("per-case carries cost", res["cases"][0]["cost"] in (0.10, 0.06))
 
 
+def test_run_eval_auto_clusters_failures():
+    """run_eval auto-runs error analysis: failure_modes summarizes the failed cases by mode."""
+    with tempfile.TemporaryDirectory() as d:
+        conn = FakeConn(GOLD_VALUES)
+        res = run_eval(_gold_path(d), PER_CASE, conn, out_dir=Path(d) / "runs", run_id="t-cluster")
+        fm = res["failure_modes"]
+        assert isinstance(fm, list)
+        # the mode counts account for exactly the failed cases
+        assert sum(c["count"] for c in fm) == res["aggregate"]["failed"]
+
+
 def test_html_and_json_render():
     with tempfile.TemporaryDirectory() as d:
         conn = FakeConn(GOLD_VALUES)
@@ -257,7 +268,8 @@ def test_html_and_json_render():
 if __name__ == "__main__":
     for fn in [test_token_overlap_similarity_bounds, test_aggregate_accuracy_and_similarity,
                test_per_case_signals, test_split_filtering, test_load_questions_is_blind,
-               test_cost_and_meta_in_run_record, test_html_and_json_render]:
+               test_cost_and_meta_in_run_record, test_run_eval_auto_clusters_failures,
+               test_html_and_json_render]:
         print(fn.__name__); fn()
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)
