@@ -168,17 +168,19 @@ def render_html(results, out_path, title="Held-out gold eval"):
     return out_path
 
 
-def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="Held-out gold eval"):
+def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="Held-out gold eval", split=None):
     """Grade a batch of analyst results against the hidden gold suite and write the readout.
 
     cases_path:        path to the gold YAML (the hidden suite).
     per_case_results:  list of {question, analyst_value, analyst_query}.
     conn:              connection used to recompute each gold in SQL (DuckDB or DBAPI/Snowflake).
     out_dir:           where the JSON + HTML readout are written.
+    split:             "train" | "test" | None (D8). Grades only that split's cases; None grades all.
+                       Recorded in the run JSON so a train run and a test run are never confused.
 
-    Returns a results dict {run_id, timestamp, aggregate, cases, unmatched, json_path, html_path}.
+    Returns a results dict {run_id, timestamp, split, aggregate, cases, unmatched, json_path, html_path}.
     """
-    cases = load_gold_cases(cases_path)
+    cases = load_gold_cases(cases_path, split=split)
     pairs, unmatched = _match_results(cases, per_case_results)
 
     by_q = {}
@@ -192,6 +194,7 @@ def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="He
     results = {
         "run_id": run_id,
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "split": split,
         "aggregate": aggregate(per_case),
         "cases": per_case,
         "unmatched": unmatched,

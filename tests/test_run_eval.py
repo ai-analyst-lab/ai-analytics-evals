@@ -166,6 +166,37 @@ def test_per_case_signals():
               all(c["gold_value"] is not None for c in res["cases"]))
 
 
+GOLD_YAML_SPLIT = GOLD_YAML.replace(
+    'type: "single-table aggregate"\n    status: verified\n    confidence: A\n    verified_by: shane\n    verified_at: 2026-06-26\n  - question: "What is the retention rate?"',
+    'type: "single-table aggregate"\n    split: train\n    status: verified\n    confidence: A\n    verified_by: shane\n    verified_at: 2026-06-26\n  - question: "What is the retention rate?"',
+).replace(
+    'type: "definitional"\n    status: verified',
+    'type: "definitional"\n    split: test\n    status: verified',
+).replace(
+    'type: "single-table aggregate"\n    status: verified\n    confidence: A\n    verified_by: shane\n    verified_at: 2026-06-26\n',
+    'type: "single-table aggregate"\n    split: train\n    status: verified\n    confidence: A\n    verified_by: shane\n    verified_at: 2026-06-26\n',
+)
+
+
+def test_split_filtering():
+    """D8: load and grade only the named split; the run JSON records which split it was."""
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "gold.yaml"; p.write_text(GOLD_YAML_SPLIT)
+        check("all cases load when split=None", len(load_gold_cases(p)) == 3)
+        tr = load_gold_cases(p, split="train"); te = load_gold_cases(p, split="test")
+        check("train split has 2 cases", len(tr) == 2)
+        check("test split has 1 case", len(te) == 1)
+        check("train cases all tagged train", all(c.split == "train" for c in tr))
+        check("test case tagged test", all(c.split == "test" for c in te))
+        check("unknown split yields no cases", load_gold_cases(p, split="bogus") == [])
+        # run_eval grades only the train split and records it; retention (test) drops to unmatched.
+        conn = FakeConn(GOLD_VALUES)
+        res = run_eval(p, PER_CASE, conn, out_dir=Path(d) / "runs", run_id="t-split", split="train")
+        check("run JSON records the split", res["split"] == "train")
+        check("only the 2 train cases graded", res["aggregate"]["total"] == 2)
+        check("retention (test) excluded from train run", "What is the retention rate?" in res["unmatched"])
+
+
 def test_html_and_json_render():
     with tempfile.TemporaryDirectory() as d:
         conn = FakeConn(GOLD_VALUES)
@@ -185,7 +216,7 @@ def test_html_and_json_render():
 
 if __name__ == "__main__":
     for fn in [test_token_overlap_similarity_bounds, test_aggregate_accuracy_and_similarity,
-               test_per_case_signals, test_html_and_json_render]:
+               test_per_case_signals, test_split_filtering, test_html_and_json_render]:
         print(fn.__name__); fn()
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)

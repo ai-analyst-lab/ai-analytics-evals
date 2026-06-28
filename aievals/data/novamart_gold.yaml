@@ -20,6 +20,7 @@ cases:
     tables: [orders]
     difficulty: easy
     type: "single-table aggregate"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -31,6 +32,7 @@ cases:
     tables: [orders]
     difficulty: easy
     type: "single-table aggregate"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -42,6 +44,7 @@ cases:
     tables: [orders]
     difficulty: easy
     type: "single-table aggregate"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -53,6 +56,7 @@ cases:
     tables: [orders]
     difficulty: easy
     type: "distinct-count"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -64,6 +68,7 @@ cases:
     tables: [orders]
     difficulty: easy
     type: "single-table aggregate"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -75,6 +80,7 @@ cases:
     tables: [nps_responses]
     difficulty: easy
     type: "single-table aggregate"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -86,6 +92,7 @@ cases:
     tables: [users]
     difficulty: easy
     type: "single-table aggregate"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -97,6 +104,7 @@ cases:
     tables: [memberships]
     difficulty: medium
     type: "definitional"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -108,6 +116,7 @@ cases:
     tables: [orders]
     difficulty: medium
     type: "ratio"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -119,6 +128,7 @@ cases:
     tables: [orders]
     difficulty: medium
     type: "ratio"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -130,6 +140,7 @@ cases:
     tables: [sessions]
     difficulty: medium
     type: "ratio"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -141,6 +152,7 @@ cases:
     tables: [memberships]
     difficulty: medium
     type: "definitional"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -152,6 +164,7 @@ cases:
     tables: [orders]
     difficulty: medium
     type: "time-windowed"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -163,6 +176,7 @@ cases:
     tables: [orders]
     difficulty: medium
     type: "time-windowed"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -174,6 +188,7 @@ cases:
     tables: [order_items, orders]
     difficulty: medium
     type: "join/fan-out-prone"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -185,6 +200,7 @@ cases:
     tables: [order_items, orders]
     difficulty: medium
     type: "join/fan-out-prone"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -196,6 +212,7 @@ cases:
     tables: [order_items, orders]
     difficulty: medium
     type: "distinct-count"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -207,6 +224,7 @@ cases:
     tables: [order_items, orders]
     difficulty: medium
     type: "multi-step"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -218,6 +236,7 @@ cases:
     tables: [orders]
     difficulty: medium
     type: "ratio"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -229,6 +248,7 @@ cases:
     tables: [support_tickets]
     difficulty: medium
     type: "ratio"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -240,6 +260,7 @@ cases:
     tables: [support_tickets]
     difficulty: medium
     type: "single-table aggregate"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -251,6 +272,7 @@ cases:
     tables: [orders, calendar]
     difficulty: medium
     type: "join/fan-out-prone"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -262,6 +284,7 @@ cases:
     tables: [orders]
     difficulty: medium
     type: "ratio"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -273,6 +296,7 @@ cases:
     tables: [events]
     difficulty: hard
     type: "definitional"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -284,6 +308,7 @@ cases:
     tables: [nps_responses]
     difficulty: hard
     type: "definitional"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -295,6 +320,7 @@ cases:
     tables: [events]
     difficulty: hard
     type: "definitional"
+    split: test
     status: verified
     confidence: A
     verified_by: shane
@@ -306,6 +332,7 @@ cases:
     tables: [events]
     difficulty: hard
     type: "time-windowed"
+    split: train
     status: verified
     confidence: A
     verified_by: shane
@@ -317,6 +344,7 @@ cases:
     tables: [order_items, orders, products]
     difficulty: hard
     type: "multi-step"
+    split: train
     status: verified
     confidence: A
     verified_by: shane

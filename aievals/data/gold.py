@@ -31,6 +31,9 @@ class GoldCase:
     difficulty: str = None       # easy | medium | hard (suite coverage, not used in scoring)
     type: str = None             # case shape: single-table aggregate, join/fan-out-prone, definitional,
                                  # time-windowed, ratio, distinct-count, multi-step (coverage label)
+    split: str = None            # train | test (D8). Iterate the system on train (error analysis, add
+                                 # context, watch it climb); hold test out as the honest generalization
+                                 # number, never tuned against. None = unsplit (legacy / run all).
     snapshot_tag: str = None     # which data snapshot this gold was derived against
     schema_checksum: str = None  # checksum of the tables the SQL reads, bound at derivation
     note: str = ""
@@ -109,12 +112,16 @@ def schema_checksum(conn, tables):
     return hashlib.sha256(blob).hexdigest()[:16]
 
 
-def load_gold_cases(path):
+def load_gold_cases(path, split=None):
     """Load gold cases from a YAML file into GoldCase objects. This is the storage convention:
     gold cases live as YAML in the repo (git-versioned, PR-reviewed), one entry per case, with
     the question, the SQL that computes the answer, and the sign-off fields. The value itself is
     never stored; it is recomputed from the SQL at eval time. Unknown keys are ignored so the
-    file can carry extra human notes without breaking the loader."""
+    file can carry extra human notes without breaking the loader.
+
+    split filters the suite by its train/test tag (D8): "train" to iterate the system on, "test"
+    to report the held-out generalization number, None (default) to load every case. An unknown
+    split returns no cases."""
     import yaml
     data = yaml.safe_load(Path(path).read_text())
     raw = data.get("cases", []) if isinstance(data, dict) else (data or [])
@@ -125,4 +132,6 @@ def load_gold_cases(path):
         if isinstance(kw.get("tables"), list):
             kw["tables"] = tuple(kw["tables"])
         cases.append(GoldCase(**kw))
+    if split is not None:
+        cases = [c for c in cases if c.split == split]
     return cases
