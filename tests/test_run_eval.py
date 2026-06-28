@@ -197,6 +197,46 @@ def test_split_filtering():
         check("retention (test) excluded from train run", "What is the retention rate?" in res["unmatched"])
 
 
+def test_load_questions_is_blind():
+    """The driver gets questions only — never sql or value — so it cannot leak the answer (D4 T2)."""
+    from aievals.data.gold import load_questions
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "gold.yaml"; p.write_text(GOLD_YAML_SPLIT)
+        qs = load_questions(p)
+        check("returns one entry per case", len(qs) == 3)
+        check("each entry has only question + split", all(set(q.keys()) == {"question", "split"} for q in qs))
+        check("no sql leaked", all("sql" not in q for q in qs))
+        check("split filter works on questions", len(load_questions(p, split="train")) == 2)
+
+
+def test_cost_and_meta_in_run_record():
+    """Live driver per-case cost/latency/tokens aggregate up; meta (git_sha) merges without clobber (D4/D22)."""
+    per_case = [
+        {"question": "What is total revenue?", "analyst_value": 3150899.34,
+         "analyst_query": "select sum(total_amount) from orders where status='completed'",
+         "cost": 0.10, "latency_ms": 2000, "tokens": 1500, "model": "opus-4.8"},
+        {"question": "How many completed orders?", "analyst_value": 40234,
+         "analyst_query": "select count(*) from orders where status='completed'",
+         "cost": 0.06, "latency_ms": 1000, "tokens": 900, "model": "opus-4.8"},
+    ]
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "gold.yaml"; p.write_text(GOLD_YAML_SPLIT)
+        conn = FakeConn(GOLD_VALUES)
+        res = run_eval(p, per_case, conn, out_dir=Path(d) / "runs", run_id="t-cost", split="train",
+                       meta={"git_sha": "abc1234", "model": "opus-4.8", "context_state": "baseline"})
+        agg = res["aggregate"]
+        check("both train cases pass", agg["passed"] == 2)
+        check("total_cost summed", agg["total_cost"] == 0.16)
+        check("cost_per_correct = total/passed", agg["cost_per_correct"] == round(0.16 / 2, 6))
+        check("total_latency summed", agg["total_latency_ms"] == 3000)
+        check("avg_latency computed", agg["avg_latency_ms"] == 1500)
+        check("total_tokens summed", agg["total_tokens"] == 2400)
+        check("meta git_sha merged top-level", res["git_sha"] == "abc1234")
+        check("meta context_state merged", res["context_state"] == "baseline")
+        check("meta cannot clobber split", res["split"] == "train")
+        check("per-case carries cost", res["cases"][0]["cost"] in (0.10, 0.06))
+
+
 def test_html_and_json_render():
     with tempfile.TemporaryDirectory() as d:
         conn = FakeConn(GOLD_VALUES)
@@ -216,7 +256,8 @@ def test_html_and_json_render():
 
 if __name__ == "__main__":
     for fn in [test_token_overlap_similarity_bounds, test_aggregate_accuracy_and_similarity,
-               test_per_case_signals, test_split_filtering, test_html_and_json_render]:
+               test_per_case_signals, test_split_filtering, test_load_questions_is_blind,
+               test_cost_and_meta_in_run_record, test_html_and_json_render]:
         print(fn.__name__); fn()
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)

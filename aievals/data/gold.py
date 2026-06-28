@@ -135,3 +135,21 @@ def load_gold_cases(path, split=None):
     if split is not None:
         cases = [c for c in cases if c.split == split]
     return cases
+
+
+def load_questions(path, split=None):
+    """Return ONLY the questions (and their split tag) from the gold suite, never the sql or value.
+
+    The live driver (D4) needs the question set to run the analyst on, but must not see the answers
+    or it could leak them into the analyst's context. This reads question + split only, so the
+    driver stays blind by construction. Grading still happens in run_eval, which loads the full
+    gold separately. split filters the same way as load_gold_cases."""
+    import yaml
+    data = yaml.safe_load(Path(path).read_text())
+    raw = data.get("cases", []) if isinstance(data, dict) else (data or [])
+    out = []
+    for c in raw:
+        if split is not None and c.get("split") != split:
+            continue
+        out.append({"question": c.get("question"), "split": c.get("split")})
+    return out

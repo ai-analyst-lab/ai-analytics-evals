@@ -98,17 +98,34 @@ def _match_results(cases, per_case_results):
 
 
 def aggregate(per_case):
-    """Suite aggregates: accuracy = pass count / total; avg query-similarity over graded cases."""
+    """Suite aggregates: accuracy = pass count / total; avg query-similarity over graded cases.
+
+    Cost, latency, and tokens are summed when the per-case records carry them (the live driver
+    attaches tokens/cost/latency_ms per case, D4); on a hand-graded batch they are absent and simply
+    omitted. cost_per_correct is the dollars-per-correct-answer cell the model comparison turns on
+    (D22)."""
     total = len(per_case)
     passed = sum(1 for p in per_case if p["passed"])
     sims = [p["query_similarity"] for p in per_case]
-    return {
+    agg = {
         "total": total,
         "passed": passed,
         "failed": total - passed,
         "accuracy": round(passed / total, 4) if total else 0.0,
         "avg_query_similarity": round(sum(sims) / len(sims), 4) if sims else 0.0,
     }
+    costs = [p["cost"] for p in per_case if p.get("cost") is not None]
+    lats = [p["latency_ms"] for p in per_case if p.get("latency_ms") is not None]
+    toks = [p["tokens"] for p in per_case if p.get("tokens") is not None]
+    if costs:
+        agg["total_cost"] = round(sum(costs), 6)
+        agg["cost_per_correct"] = round(sum(costs) / passed, 6) if passed else None
+    if lats:
+        agg["total_latency_ms"] = int(sum(lats))
+        agg["avg_latency_ms"] = int(sum(lats) / len(lats))
+    if toks:
+        agg["total_tokens"] = int(sum(toks))
+    return agg
 
 
 def render_html(results, out_path, title="Held-out gold eval"):
@@ -168,15 +185,19 @@ def render_html(results, out_path, title="Held-out gold eval"):
     return out_path
 
 
-def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="Held-out gold eval", split=None):
+def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="Held-out gold eval", split=None, meta=None):
     """Grade a batch of analyst results against the hidden gold suite and write the readout.
 
     cases_path:        path to the gold YAML (the hidden suite).
-    per_case_results:  list of {question, analyst_value, analyst_query}.
+    per_case_results:  list of {question, analyst_value, analyst_query}; the live driver also
+                       attaches per-case {latency_ms, tokens, cost, model} (D4), carried through.
     conn:              connection used to recompute each gold in SQL (DuckDB or DBAPI/Snowflake).
     out_dir:           where the JSON + HTML readout are written.
     split:             "train" | "test" | None (D8). Grades only that split's cases; None grades all.
                        Recorded in the run JSON so a train run and a test run are never confused.
+    meta:              optional run provenance merged into the record without clobbering core keys
+                       (git_sha, model, context_state, changelog, ...) so the run is self-describing
+                       (D4) and the monitor can read git_sha/changelog directly (BL-C1).
 
     Returns a results dict {run_id, timestamp, split, aggregate, cases, unmatched, json_path, html_path}.
     """
@@ -188,7 +209,13 @@ def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="He
         by_q[str(r.get("question", "")).strip().lower()] = r
     per_case = []
     for case, r in pairs:
-        per_case.append(grade_case(case, r.get("analyst_value"), r.get("analyst_query"), conn))
+        gc = grade_case(case, r.get("analyst_value"), r.get("analyst_query"), conn)
+        # Carry through the live driver's per-case capture (D4): cost, latency, tokens, and which
+        # model produced the answer. Present on a live run, absent on a hand-graded batch.
+        for k in ("latency_ms", "tokens", "cost", "model"):
+            if r.get(k) is not None:
+                gc[k] = r[k]
+        per_case.append(gc)
 
     run_id = run_id or datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%SZ")
     results = {
@@ -199,6 +226,10 @@ def run_eval(cases_path, per_case_results, conn, out_dir, run_id=None, title="He
         "cases": per_case,
         "unmatched": unmatched,
     }
+    # Merge run provenance (git_sha, model, context_state, ...) without clobbering core keys, so the
+    # record is self-describing and the monitor reads git_sha/changelog straight off it (D4, BL-C1).
+    for k, v in (meta or {}).items():
+        results.setdefault(k, v)
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
