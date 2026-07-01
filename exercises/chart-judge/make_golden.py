@@ -36,6 +36,28 @@ def make(name, *, action_title, accent, direct_label, declutter, zero_base):
     fig.savefig(GOLD/f"{name}.png", dpi=100, bbox_inches="tight"); plt.close(fig)
     return all([action_title, accent, direct_label, declutter, zero_base])
 
+
+def make_special(name, kind):
+    """SWD-clean on the 5 current axes, but bad in a way none of them catches (for the alignment lesson)."""
+    fig, ax = plt.subplots(figsize=(7,4)); fig.patch.set_facecolor("#F7F6F2"); ax.set_facecolor("#F7F6F2")
+    ax.plot(months, rev, color="#D97706", lw=2.5)
+    ax.set_ylim(0, max(rev)*1.1)
+    for sp in ["top","right"]: ax.spines[sp].set_visible(False)
+    ax.grid(axis="y", alpha=0.25, color="#E5E7EB"); ax.tick_params(length=0)
+    if kind == "overclaim":
+        # action-title PASSES (it's a takeaway) but the claim is false/exaggerated (real growth ~447%)
+        ax.set_title("Revenue exploded 900% across 2024", loc="left", fontweight="bold")
+        ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_: f"${x/1e6:.1f}M"))
+        ax.annotate(f"${rev[-1]/1e6:.1f}M", (len(months)-1, rev[-1]), textcoords="offset points",
+                    xytext=(6,4), color="#D97706", fontweight="bold")
+    elif kind == "overprecise":
+        # clean on the 5 axes, but every number is absurdly over-precise
+        ax.set_title(f"Revenue grew {round((rev[-1]-rev[0])/rev[0]*100,4)}% across 2024", loc="left", fontweight="bold")
+        ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_: f"${x:,.2f}"))
+        ax.annotate(f"${rev[-1]:,.2f}", (len(months)-1, rev[-1]), textcoords="offset points",
+                    xytext=(6,4), color="#D97706", fontweight="bold")
+    fig.savefig(GOLD/f"{name}.png", dpi=100, bbox_inches="tight"); plt.close(fig)
+
 # 12 charts with varied profiles (T=has-the-good-thing). PASS only if all 5.
 profiles = [
     ("chart-01", dict(action_title=1,accent=1,direct_label=1,declutter=1,zero_base=1)),  # all good -> pass
@@ -55,7 +77,11 @@ rows=[]
 for name, prof in profiles:
     good = make(name, **prof)
     rows.append((f"{name}.png", "pass" if good else "fail"))
+# two "uncovered flaw" charts: SWD-clean on the 5 axes, but a human fails them (alignment lesson)
+make_special("chart-13", "overclaim");   rows.append(("chart-13.png","fail"))
+make_special("chart-14", "overprecise"); rows.append(("chart-14.png","fail"))
+
 with open(GOLD/"golden-labels.csv","w",newline="") as f:
     w=csv.writer(f); w.writerow(["chart","gold_verdict"]); w.writerows(rows)
 npass=sum(1 for _,v in rows if v=="pass")
-print(f"wrote 12 golden charts + golden-labels.csv ({npass} pass, {12-npass} fail)")
+print(f"wrote {len(rows)} golden charts + golden-labels.csv ({npass} pass, {len(rows)-npass} fail)")
