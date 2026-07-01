@@ -16,7 +16,7 @@ anchor, and a fail anchor; a `Rubric` is a set of axes; the score is per-axis pa
 - `get_revenue.py` — pulls the live 2024 monthly revenue (no committed data).
 - `log_score.py` — appends a judge run to `scores.csv`, one row per axis (long format).
 - `score_judge.py` — measures the judge against the golden set, precision/recall, appends `alignment-scores.csv`.
-- `golden/` — 12 charts human-labeled pass/fail (`golden-labels.csv`), the answer key for alignment.
+- `golden/` — 14 charts human-labeled pass/fail (`golden-labels.csv`), the answer key for alignment.
 - `scores.csv` / `alignment-scores.csv` — your two run logs (created on first run).
 - `submissions/` — where you drop your rubric and improving charts.
 
