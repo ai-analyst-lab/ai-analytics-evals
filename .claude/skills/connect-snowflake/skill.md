@@ -19,7 +19,7 @@ them from there. If your `.env` is somewhere else, point the loader at that path
 
 ### Run a query
 Run this, substituting your SQL. Tables are **unqualified** in the `NOVAMART` schema
-(`orders`, `order_items`, `products`, `users`, `sessions`, `events`, `memberships`, ...).
+(`orders`, `order_items`, `products`, `users`, `sessions`, `events`, `memberships`, `promotions`, `experiments`, `experiment_assignments`, `nps_responses`, `support_tickets`, `calendar`).
 Use Snowflake dialect (`DATE_TRUNC('month', col)`, etc.).
 
 ```bash
