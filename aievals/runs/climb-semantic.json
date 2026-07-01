@@ -1,0 +1,182 @@
+{
+  "run_id": "climb-semantic",
+  "timestamp": "2026-06-27T05:54:57+00:00",
+  "aggregate": {
+    "total": 14,
+    "passed": 11,
+    "failed": 3,
+    "accuracy": 0.7857,
+    "avg_query_similarity": 0.7506
+  },
+  "cases": [
+    {
+      "question": "What is total completed revenue?",
+      "difficulty": "easy",
+      "type": "single-table aggregate",
+      "gold_value": 3150899.34,
+      "analyst_value": 3150899.34,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT SUM(total_amount) FROM orders WHERE status='completed'",
+      "query_diff": "identical",
+      "query_similarity": 1.0
+    },
+    {
+      "question": "How many completed orders are there?",
+      "difficulty": "easy",
+      "type": "single-table aggregate",
+      "gold_value": 40234.0,
+      "analyst_value": 40234.0,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT COUNT(*) FROM orders WHERE status='completed'",
+      "query_diff": "identical",
+      "query_similarity": 1.0
+    },
+    {
+      "question": "How many distinct customers placed a completed order?",
+      "difficulty": "easy",
+      "type": "distinct-count",
+      "gold_value": 27205.0,
+      "analyst_value": 27205.0,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "select count(distinct user_id) from orders where status='completed'",
+      "query_diff": "identical",
+      "query_similarity": 1.0
+    },
+    {
+      "question": "What is our membership retention rate?",
+      "difficulty": "medium",
+      "type": "definitional",
+      "gold_value": 0.255578,
+      "analyst_value": 81.6,
+      "passed": false,
+      "unit_adjusted": false,
+      "analyst_query": "select round(100.0 * count_if(status='active') / count(*), 1) as retention_rate_pct from memberships where plan_type in ('plus_monthly','plus_annual')",
+      "query_diff": "changed",
+      "query_similarity": 0.3684
+    },
+    {
+      "question": "What is the order cancellation rate?",
+      "difficulty": "medium",
+      "type": "ratio",
+      "gold_value": 0.097375,
+      "analyst_value": 9.737494,
+      "passed": true,
+      "unit_adjusted": true,
+      "analyst_query": "SELECT COUNT_IF(status='cancelled')*100.0/COUNT(*) AS cancellation_rate_pct FROM orders",
+      "query_diff": "changed",
+      "query_similarity": 0.6667
+    },
+    {
+      "question": "What share of sessions resulted in a purchase?",
+      "difficulty": "medium",
+      "type": "ratio",
+      "gold_value": 0.033329,
+      "analyst_value": 0.034116,
+      "passed": false,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT COUNT(DISTINCT CASE WHEN event_type='purchase_complete' THEN session_id END) / COUNT(DISTINCT session_id) AS purchase_session_share FROM events",
+      "query_diff": "changed",
+      "query_similarity": 0.1579
+    },
+    {
+      "question": "What is total line-item revenue (sum of line_total) for completed orders?",
+      "difficulty": "medium",
+      "type": "join/fan-out-prone",
+      "gold_value": 2918187.8400000003,
+      "analyst_value": 2918187.84,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT SUM(oi.line_total) FROM order_items oi JOIN orders o ON oi.order_id = o.order_id WHERE o.status = 'completed'",
+      "query_diff": "changed",
+      "query_similarity": 1.0
+    },
+    {
+      "question": "What is average completed revenue per customer?",
+      "difficulty": "medium",
+      "type": "ratio",
+      "gold_value": 115.82059694909023,
+      "analyst_value": 115.82059694909023,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT SUM(total_amount)/COUNT(DISTINCT user_id) FROM orders WHERE status='completed'",
+      "query_diff": "identical",
+      "query_similarity": 1.0
+    },
+    {
+      "question": "What was completed revenue on holidays?",
+      "difficulty": "medium",
+      "type": "join/fan-out-prone",
+      "gold_value": 139439.03999999998,
+      "analyst_value": 139439.04,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT SUM(o.total_amount) FROM orders o JOIN calendar c ON o.order_date = c.date WHERE o.status='completed' AND c.is_holiday = TRUE",
+      "query_diff": "changed",
+      "query_similarity": 0.9444
+    },
+    {
+      "question": "What is the membership trial-to-paid conversion rate?",
+      "difficulty": "medium",
+      "type": "definitional",
+      "gold_value": 0.31326,
+      "analyst_value": 45.62,
+      "passed": false,
+      "unit_adjusted": false,
+      "analyst_query": "select round(100.0 * count_if(status='converted') / count(*), 2) as trial_to_paid_pct from memberships where plan_type='plus_trial'",
+      "query_diff": "changed",
+      "query_similarity": 0.4706
+    },
+    {
+      "question": "What is the checkout conversion rate?",
+      "difficulty": "hard",
+      "type": "definitional",
+      "gold_value": 0.33238,
+      "analyst_value": 33.24,
+      "passed": true,
+      "unit_adjusted": true,
+      "analyst_query": "select round(100.0*count(distinct case when started and purchased then session_id end)/nullif(count(distinct case when started then session_id end),0),2) as checkout_conv_rate from (select session_id, max(case when event_type='checkout_started' then 1 else 0 end)=1 as started, max(case when event_type='purchase_complete' then 1 else 0 end)=1 as purchased from events group by session_id)",
+      "query_diff": "changed",
+      "query_similarity": 0.5714
+    },
+    {
+      "question": "What is the NPS (net promoter score)?",
+      "difficulty": "hard",
+      "type": "definitional",
+      "gold_value": 42.2875,
+      "analyst_value": 42.29,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT ROUND(100.0 * (SUM(CASE WHEN score >= 9 THEN 1 ELSE 0 END) - SUM(CASE WHEN score <= 6 THEN 1 ELSE 0 END)) / COUNT(*), 2) AS nps FROM nps_responses",
+      "query_diff": "changed",
+      "query_similarity": 0.4286
+    },
+    {
+      "question": "How many monthly active users were there in December 2024?",
+      "difficulty": "hard",
+      "type": "time-windowed",
+      "gold_value": 49617.0,
+      "analyst_value": 49617.0,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT COUNT(DISTINCT user_id) FROM events WHERE event_date >= '2024-12-01' AND event_date < '2025-01-01'",
+      "query_diff": "identical",
+      "query_similarity": 1.0
+    },
+    {
+      "question": "What is the total product cost (COGS) for completed orders?",
+      "difficulty": "hard",
+      "type": "multi-step",
+      "gold_value": 1754734.66,
+      "analyst_value": 1754734.66,
+      "passed": true,
+      "unit_adjusted": false,
+      "analyst_query": "SELECT SUM(oi.quantity * p.cost) AS total_cogs FROM order_items oi JOIN orders o ON oi.order_id = o.order_id JOIN products p ON oi.product_id = p.product_id WHERE o.status = 'completed'",
+      "query_diff": "changed",
+      "query_similarity": 0.9
+    }
+  ],
+  "unmatched": []
+}
