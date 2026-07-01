@@ -1,0 +1,6 @@
+# generated charts (show revenue; regenerate with make_golden.py / the loop)
+golden/*.png
+*.png
+# runtime run logs (created as students run)
+scores.csv
+alignment-scores.csv
