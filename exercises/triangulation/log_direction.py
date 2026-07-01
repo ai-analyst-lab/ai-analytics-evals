@@ -3,8 +3,8 @@
 chart-judge's scores.csv. Called after an arm answers (the arm runs blind: answer first, log after,
 do not read this file first).
 
-    python3 log_direction.py --method before-after --direction no \
-        --headline "-10.3% vs prior fortnight" --basis "promo window revenue below the prior equal window"
+    python3 log_direction.py --method <your-method-name> --direction <yes|no|unclear> \
+        --headline "<the key number>" --basis "<one line: what this method measured>"
 """
 import argparse, csv, pathlib, datetime, uuid
 HERE = pathlib.Path(__file__).parent
