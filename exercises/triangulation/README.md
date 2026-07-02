@@ -19,3 +19,8 @@ That is the point: if an experiment existed, you would just analyze the experime
 
 Data access: the `connect-snowflake` skill in this repo (live NovaMart, read-only). The prompts for
 each arm are in the student guide.
+
+Two ways to run it:
+- **Guided arms** (the student guide): three prescribed angles, one prompt each, fresh session per arm.
+- **The orchestrator flow** (`ORCHESTRATOR.md`): one prompt picks four distinct approaches, runs three
+  as parallel blind subagents, and hands the fourth to a different model family in a second terminal.
