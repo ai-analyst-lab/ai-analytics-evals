@@ -17,7 +17,7 @@ Before a fresh run: delete `directions.csv` and `arm4-prompt.txt` if they exist,
 > 1. Pick FOUR methodologically distinct analysis approaches with different blind spots. Make them
 > genuinely different kinds of comparison (for example: time-window comparisons, trend or counterfactual
 > projections, attribution the way a marketing dashboard reads it, cohort or segment views, post-period
-> checks). Name each approach and say in one line what its blind spot is.
+> checks). At least two of the four should NOT be from that example list, pick something the examples made you think of. Before assigning any approach, check the data can support it (this dataset has no prior-year history, so year-over-year style comparisons come back unclear). Name each approach and say in one line what its blind spot is.
 >
 > 2. Assign approaches 1-3 to three subagents run IN PARALLEL. Each subagent is blind: it gets only the
 > question, its assigned approach, and the connect-snowflake skill for data access. It must not read
