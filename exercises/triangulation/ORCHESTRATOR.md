@@ -7,7 +7,7 @@ self-contained prompt you paste into a DIFFERENT model in a second terminal (the
 you benchmarked on the Models day, via ollama). Different model family, different failure modes, which
 is exactly the independence this check wants.
 
-Before a fresh run: delete `directions.csv` if it exists, so the grid you read is this run's rows only.
+Before a fresh run: delete `directions.csv` and `arm4-prompt.txt` if they exist, so the grid you read and the prompt you paste are this run's only.
 
 ## The orchestrator prompt (paste in Claude Code, in this folder)
 
