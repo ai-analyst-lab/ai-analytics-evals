@@ -7,6 +7,8 @@ self-contained prompt you paste into a DIFFERENT model in a second terminal (the
 you benchmarked on the Models day, via ollama). Different model family, different failure modes, which
 is exactly the independence this check wants.
 
+Before a fresh run: delete `directions.csv` if it exists, so the grid you read is this run's rows only.
+
 ## The orchestrator prompt (paste in Claude Code, in this folder)
 
 > You are the analytics lead on a four-analyst team answering one question: did the Summer Sale
@@ -20,7 +22,9 @@ is exactly the independence this check wants.
 > 2. Assign approaches 1-3 to three subagents run IN PARALLEL. Each subagent is blind: it gets only the
 > question, its assigned approach, and the connect-snowflake skill for data access. It must not read
 > directions.csv or any other analysis. Each subagent returns: its method in one line, the key numbers,
-> and a direction (yes / no / unclear) with a one-line basis, then logs it with log_direction.py.
+> and a direction (yes / no / unclear) with a one-line basis, then logs it with log_direction.py. Read
+> log_direction.py's usage yourself first and put the exact command and flags in each subagent's brief,
+> so the subagents never open any file in this folder.
 >
 > 3. For approach 4, first pull the data it needs yourself (keep it compact: daily completed revenue
 > May 1 to August 14, and the promo's dates and discount). Then write a fully self-contained prompt
