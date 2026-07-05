@@ -175,3 +175,15 @@ cases:
     type: "single-table aggregate"
     split: test
     note: "Floor-ish; naive ended_at IS NULL may agree with is_current — confirms the active definition."
+
+  # ---- C1 live-fix candidate (Tuesday's meaning-keyed case; rides in Thursday's baseline) ----
+  - question: "What was NovaMart's gross revenue for 2024?"
+    sql: "select sum(subtotal) from orders where status='completed' and year(order_date)=2024"
+    approved_query: "select sum(subtotal) from orders where status='completed' and year(order_date)=2024"
+    tables: [orders]
+    difficulty: medium
+    type: "definitional"
+    split: train
+    status: proposed
+    rel_tol: 0.002
+    note: "Meaning-keyed to what a finance reader means by gross: pre-discount subtotal, completed only, 2024. The old misnamed measure (total_amount basis) reads ~0.39% lower."

@@ -37,6 +37,10 @@ class GoldCase:
     snapshot_tag: str = None     # which data snapshot this gold was derived against
     schema_checksum: str = None  # checksum of the tables the SQL reads, bound at derivation
     note: str = ""
+    rel_tol: float = None        # per-case relative tolerance override. The default (0.5%) is too
+                                 # loose for meaning-keyed cases whose competing readings sit close
+                                 # together (gross-vs-total on NovaMart differ by ~0.39%); such a
+                                 # case sets rel_tol tight enough to discriminate the readings.
     # Sign-off and freshness (the proposed -> verified lifecycle). A case is not trusted until a
     # confirming query passes or a human signs off; the grade and last_verified drive freshness.
     status: str = "proposed"     # proposed | verified | superseded

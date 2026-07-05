@@ -60,13 +60,14 @@ def grade_case(case, analyst_value, analyst_query, conn):
     if gold_value is not None:
         gold_value = float(gold_value)
     a_value = parse_number(analyst_value)
-    passed = values_match(a_value, gold_value)
+    tol = getattr(case, "rel_tol", None)
+    passed = values_match(a_value, gold_value, rel_tol=tol) if tol else values_match(a_value, gold_value)
     # Unit-aware: a rate reported as a percent (33.24) vs a fraction gold (0.3324) is the SAME number,
     # just a different reporting unit. Pass it, but flag it so the readout shows it was a unit difference,
     # not a clean match. Only kicks in when the gold is a rate (0 < gold <= 1) and analyst is ~100x.
     unit_adjusted = False
     if not passed and a_value is not None and gold_value is not None and 0 < abs(gold_value) <= 1.0:
-        if values_match(a_value / 100.0, gold_value):
+        if values_match(a_value / 100.0, gold_value, rel_tol=(tol or 0.005)):
             passed = True
             unit_adjusted = True
 
