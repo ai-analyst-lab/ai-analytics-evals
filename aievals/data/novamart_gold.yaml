@@ -389,8 +389,8 @@ cases:
     confidence: A
     verified_by: shane
     verified_at: 2026-06-27
-    last_verified: 2026-06-27
-    note: "Drifts: naive = completed only (gross) or all statuses; house = completed minus returned."
+    last_verified: 2026-07-08
+    note: "Drifts: naive = completed only (gross) or all statuses; house = completed minus returned. Recomputed live 2026-07-08, matched to the cent. C2 tier-1: the bare net_revenue meaning contract targets THIS case."
 
   - question: "What is our gross margin percentage on completed orders?"
     sql: "select (sum(oi.line_total) - sum(oi.quantity*p.cost))*1.0/nullif(sum(oi.line_total),0) from order_items oi join orders o on oi.order_id=o.order_id join products p on oi.product_id=p.product_id where o.status='completed'"

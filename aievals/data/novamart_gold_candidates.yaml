@@ -214,3 +214,37 @@ cases:
     status: proposed
     rel_tol: 0.002
     note: "Meaning-keyed to what a finance reader means by gross: pre-discount subtotal, completed only, 2024. The old misnamed measure (total_amount basis) reads ~0.39% lower."
+
+  # ---- C2 two-tier net-revenue arc (Thursday, "The Loop" suite lab) ----
+  # TIER 1 is the EXISTING verified gold in novamart_gold.yaml ("What is our net revenue?",
+  # completed minus returned on total_amount). Recomputed live 2026-07-08: matches to the cent.
+  # No new candidate needed for tier 1; the bare net_revenue meaning contract targets it.
+  # TIER 2 below is the harder case: the question wording ("after discounts and returns") baits
+  # subtracting discount_amount AGAIN, but total_amount is already net of the discount
+  # (subtotal - discount_amount + shipping_amount, the C1-taught composition). The contract's
+  # meaning (completed minus returned) does not by itself say how total_amount composes, so a
+  # definition-only store plausibly still double-subtracts; the staged verified query (Q4 2024
+  # net revenue, a DIFFERENT window) teaches the total_amount-as-is pattern. That behavioral arc
+  # is NEEDS-LIVE-REHEARSAL; the deterministic parts below were computed live 2026-07-08.
+  - question: "What was our net revenue after discounts and returns in 2024?"
+    sql: "select sum(iff(status='completed',total_amount,0)) - sum(iff(status='returned',total_amount,0)) from orders where year(order_date)=2024"
+    approved_query: "select sum(iff(status='completed',total_amount,0)) - sum(iff(status='returned',total_amount,0)) from orders where year(order_date)=2024"
+    tables: [orders]
+    difficulty: hard
+    type: "definitional"
+    split: train
+    status: proposed
+    rel_tol: 0.002
+    note: >-
+      Double-discount trap. Correct reading = completed minus returned on total_amount AS-IS,
+      2024 window; total_amount already includes the discount, so "after discounts" is satisfied
+      by using it unmodified. Verified live 2026-07-08 vs BOOTCAMP_DB.NOVAMART; the value is
+      recomputed at grade time, never stored. Defensible-wrong spread (rel gap vs correct):
+      double-subtract discount both sides 7.79%; double-subtract completed side only 8.27%;
+      cancelled counted as returns 12.08%; gross-only (ignores returns) 6.33%; all statuses
+      24.75%; fan-out through order_items 87.76%; line_total basis 7.39%; subtotal basis 0.40%.
+      rel_tol 0.002 fails ALL of these including the subtotal-basis reading (0.40% > 0.20%,
+      2x margin) while passing normal rounding. Known slack, accepted: an analyst that ignores
+      the 2024 window and computes all-time net lands 0.031% away and PASSES; the data window is
+      2024-01-02 to 2025-01-01 so the year filter excludes a single day, and window choice is not
+      the trap this case teaches.
