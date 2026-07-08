@@ -392,6 +392,27 @@ cases:
     last_verified: 2026-07-08
     note: "Drifts: naive = completed only (gross) or all statuses; house = completed minus returned. Recomputed live 2026-07-08, matched to the cent. C2 tier-1: the bare net_revenue meaning contract targets THIS case."
 
+  - question: "What was our net revenue after discounts and returns in 2024?"
+    sql: "select sum(iff(status='completed',total_amount,0)) - sum(iff(status='returned',total_amount,0)) from orders where year(order_date)=2024"
+    approved_query: "select sum(iff(status='completed',total_amount,0)) - sum(iff(status='returned',total_amount,0)) from orders where year(order_date)=2024"
+    tables: [orders]
+    difficulty: hard
+    type: "definitional"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-07-08
+    last_verified: 2026-07-08
+    rel_tol: 0.002
+    note: >-
+      C2 tier-2, the double-discount trap: "after discounts" baits subtracting discount_amount
+      again, but total_amount is already net of the discount (subtotal - discount_amount +
+      shipping_amount). Correct = completed minus returned on total_amount AS-IS, 2024 window.
+      Value recomputed at grade time, never stored; verified live 2026-07-08. rel_tol 0.002
+      fails every defensible wrong reading (nearest: subtotal basis at 0.40%, 2x margin).
+      Promoted from novamart_gold_candidates.yaml (full wrong-reading spread documented there).
+
   - question: "What is our gross margin percentage on completed orders?"
     sql: "select (sum(oi.line_total) - sum(oi.quantity*p.cost))*1.0/nullif(sum(oi.line_total),0) from order_items oi join orders o on oi.order_id=o.order_id join products p on oi.product_id=p.product_id where o.status='completed'"
     approved_query: "select (sum(oi.line_total) - sum(oi.quantity*p.cost))*1.0/nullif(sum(oi.line_total),0) from order_items oi join orders o on oi.order_id=o.order_id join products p on oi.product_id=p.product_id where o.status='completed'"
