@@ -29,22 +29,25 @@ cases:
     difficulty: medium
     type: "definitional"
     split: train
-    status: proposed
+    status: alternative          # NOT proposed: do not promote by default (see note)
     rel_tol: 0.005
     note: >-
-      C2 "The Loop" retention anchor. Meaning: "still with us" = active OR converted
-      (trial-to-paid) out of ALL memberships. Verified live 2026-07-07 vs
-      BOOTCAMP_DB.NOVAMART.MEMBERSHIPS (5513 rows; active 1409, converted 1727,
-      expired 2059, cancelled 318). Recomputed at grade time, never a stored number.
-      DIFFERS FROM (and is the C2-anchor counterpart to) novamart_gold.yaml:101
-      "What is our membership retention rate?" which uses is_current/all = active/total
-      (~25.6%); THIS reading (active-or-converted/all) is the C2 gold "still with us"
-      (~57%). They are two defensible readings of the same question — that ambiguity IS
-      the lesson (undefined store drifts wide 25.6%->94.2%; the meaning contract collapses
-      it to this one). Do NOT merge both into novamart_gold.yaml under the same question
-      without deciding which is canonical; this candidate documents the C2 reading and its
-      relationship to the existing line-101 case. rel_tol 0.005 cleanly fails every other
-      defensible reading (nearest, active/(active+cancelled) ~81.6%, is 43% relative away).
+      C2 "The Loop" retention, ALTERNATIVE reading, NOT the staged anchor. The C2 lab's
+      CANONICAL / verified reading is is_current/all (currently active over ALL
+      memberships), which is ALREADY the existing verified gold at novamart_gold.yaml:101
+      (`count_if(is_current)/count(*)`, ~25.6%). The lab converges back onto THAT reading,
+      so the C2 anchor needs NO new candidate and the graded gold does not change.
+      THIS entry documents the ALTERNATIVE reading Shane may pick instead: active OR
+      converted (trial-to-paid) out of ALL memberships (~57%), the "still with us" framing.
+      Verified live 2026-07-07 vs BOOTCAMP_DB.NOVAMART.MEMBERSHIPS (5513 rows; active 1409,
+      converted 1727, expired 2059, cancelled 318); recomputed at grade time, never stored.
+      The two are the defensible readings whose gap IS the lesson (undefined store drifts
+      wide ~25.6%->94.2%; the meaning contract collapses it to ONE). Do NOT merge this into
+      novamart_gold.yaml unless Shane switches the canonical reading to active-or-converted,
+      in which case re-stage line 101 and update the C1 script lines together. status stays
+      "alternative" so verify_candidates/merge skip it by default. rel_tol 0.005 cleanly
+      fails every other defensible reading (nearest, active/(active+cancelled) ~81.6%, is
+      43% relative away).
 
   - question: "What is the cart abandonment rate?"
     sql: "with s as (select session_id, max(iff(event_type='add_to_cart',1,0)) atc, max(iff(event_type='purchase_complete',1,0)) pc from events group by session_id) select count_if(atc=1 and pc=0)*1.0/nullif(count_if(atc=1),0) from s"
