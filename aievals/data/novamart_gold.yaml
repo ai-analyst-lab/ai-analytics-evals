@@ -406,9 +406,12 @@ cases:
     last_verified: 2026-07-08
     rel_tol: 0.002
     note: >-
-      C2 tier-2, the double-discount trap: "after discounts" baits subtracting discount_amount
-      again, but total_amount is already net of the discount (subtotal - discount_amount +
-      shipping_amount). Correct = completed minus returned on total_amount AS-IS, 2024 window.
+      C2 tier-2. The question wording invites re-subtracting discount_amount, but total_amount is
+      already net of the discount (subtotal - discount_amount + shipping_amount). Correct = completed
+      minus returned on total_amount AS-IS, 2024 window. Arc-tested 2026-07-08 (Opus, fresh blind runs):
+      with the money columns documented in the semantic layer the double-subtract bait does NOT bite;
+      the observed failure mode is mapping onto the adjacent total_revenue entry (completed-only,
+      ignores returns, +6.33%); the net_revenue contract fixes it exact-gold 3/3.
       Value recomputed at grade time, never stored; verified live 2026-07-08. rel_tol 0.002
       fails every defensible wrong reading (nearest: subtotal basis at 0.40%, 2x margin).
       Promoted from novamart_gold_candidates.yaml (full wrong-reading spread documented there).
