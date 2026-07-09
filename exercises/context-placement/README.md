@@ -73,14 +73,16 @@ fades over a long session, a retrieved rule can simply never show up.
 > The verified SQL for checkout conversion, human-verified and re-runnable:
 >
 > ```sql
-> WITH checkout AS (SELECT DISTINCT session_id FROM events WHERE event_type = 'checkout_started'),
->      purchase AS (SELECT DISTINCT session_id FROM events WHERE event_type = 'purchase_complete')
+> WITH checkout AS (SELECT DISTINCT session_id FROM events WHERE event_type = 'checkout_started'
+>                     AND event_date >= '2024-01-01' AND event_date < '2024-04-01'),
+>      purchase AS (SELECT DISTINCT session_id FROM events WHERE event_type = 'purchase_complete'
+>                     AND event_date >= '2024-01-01' AND event_date < '2024-04-01')
 > SELECT COUNT(*) * 1.0 / (SELECT COUNT(*) FROM checkout)
 > FROM checkout c
 > WHERE c.session_id IN (SELECT session_id FROM purchase)
 > ```
 >
-> Question it answers: "What is our checkout conversion rate?" Session grain, event-based, does
+> Question it answers: "What was our checkout conversion rate in Q1 2024?" Session grain, event-based, window-scoped so it never answers a graded eval question, does
 > not use `sessions.had_purchase`. The SQL pattern is stored, never the result number.
 
 ## Card 6
