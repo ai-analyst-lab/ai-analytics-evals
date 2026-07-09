@@ -626,3 +626,27 @@ cases:
     verified_at: 2026-06-27
     last_verified: 2026-06-27
     note: "Floor-ish; naive ended_at IS NULL may agree with is_current — confirms the active definition."
+
+  - question: "What was the purchase conversion rate of the treatment group in the save_for_later_visibility experiment?"
+    sql: "WITH a AS (SELECT user_id, assigned_date FROM experiment_assignments WHERE experiment_id = 1 AND variant = 'treatment') SELECT COUNT(DISTINCT IFF(o.status = 'completed' AND o.order_date >= a.assigned_date, o.user_id, NULL)) * 1.0 / COUNT(DISTINCT a.user_id) FROM a LEFT JOIN orders o ON o.user_id = a.user_id"
+    approved_query: "WITH a AS (SELECT user_id, assigned_date FROM experiment_assignments WHERE experiment_id = 1 AND variant = 'treatment') SELECT COUNT(DISTINCT IFF(o.status = 'completed' AND o.order_date >= a.assigned_date, o.user_id, NULL)) * 1.0 / COUNT(DISTINCT a.user_id) FROM a LEFT JOIN orders o ON o.user_id = a.user_id"
+    tables: [experiment_assignments, orders]
+    difficulty: hard
+    type: "analysis-pattern"
+    split: train
+    status: verified
+    confidence: A
+    verified_by: shane
+    verified_at: 2026-07-08
+    last_verified: 2026-07-08
+    rel_tol: 0.01
+    note: >-
+      C2 second-round case: the house experiment-conversion reading (intention-to-treat): denominator =
+      all assigned users in the arm; converter = a COMPLETED ORDER on/after that user's own assigned_date
+      (orders, never events; per-user correlation, never the experiment calendar window; no end bound).
+      Arc-tested 2026-07-08 (Opus, fresh blind runs): with no exemplar, runs DRIFT 0.19-0.71 (events-based,
+      calendar-window, and any-time readings; none find per-user windowing); with the checkout_redesign
+      exemplar in verified_queries, 3/3 runs land 0.3640 exactly. Wrong-reading spread vs gold: naive
+      any-time orders 0.6518 (+79%); events any-time 0.7096; events calendar-window 0.1906; post-first-
+      exposure orders 0.3508 (-3.6%); events post-assignment 0.4132 (+13.5%). rel_tol 0.01 separates all.
+      No definition can carry this case: it is an analysis convention, which is what verified examples hold.
