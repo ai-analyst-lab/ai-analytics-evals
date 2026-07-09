@@ -11,7 +11,7 @@
 #   retention            = count_if(is_current)/count(*) from memberships
 #   checkout conversion  = events-based: distinct purchase_complete sessions / distinct
 #                          checkout_started sessions (NOT sessions.had_purchase)
-# 28 cases spread across difficulty (easy/medium/hard) and type (single-table aggregate,
+# 47 cases (24 train / 23 test) spread across difficulty (easy/medium/hard) and type (single-table aggregate,
 # join/fan-out-prone, definitional, time-windowed, ratio, distinct-count, multi-step).
 cases:
   - question: "What is total completed revenue?"
